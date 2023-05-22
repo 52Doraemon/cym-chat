@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.cym</groupId>
+    <artifactId>cym-chat</artifactId>
+    <version>3.0.0</version>
+    <name>cym-chat</name>
+    <description>人工智能小助手</description>
+    <!--
+        版本日志：
+
+        1.0.0版本：由于没有域名，因此只有通过ip地址访问，通过 8080 端口访问不稀奇
+        2.0.0版本：由于申请域名可以指向IP进行DNS解析了，使用把端口更改为80
+        2.5.0版本：优化域名重定向，当访问ai99.club/时直接重定向到ai99.club/chat/web
+        2.5.1版本：进行微信打开网址申诉，根目录部署tencent8019034086540641414.txt文件
+        2.5.2版本：下线版，服务不可用
+        2.6.0版本：增加短暂记录用户信息，保持十条上下文聊天信息
+        2.6.1版本：增加输入密码开启聊天
+        2.6.2版本：短暂记录用户14天信息，保持20条上下文聊天信息，最多保持100条最新消息，优化前端页面，发送图标
+        2.6.3版本：api请求地址使用官方地址https://api.openai.com/v1/chat/completions，取消使用代理
+        2.7.0版本：修复BUG：int fromIndex = Math.max(listSize - 10, 0);确保value.subList(fromIndex, listSize);的fromIndex不是负数
+                  put 方法将根据输入列表的大小，将适当数量的聊天消息存储到缓存中，同时确保始终使用非负索引值。解决了 IndexOutOfBoundsException 的问题。
+                  增加页面输入框输入”/“即可唤出提示模板
+                  页面输入框增加”/“键入预设模板为小助手设置角色
+                  优化文字框右对齐问题
+        开发日志：
+        1、保存在浏览器的JSESSIONID在服务器重启后，用户进入网页会重新生成JSESSIONID并对旧JSESSIONID进行覆盖
+        2、开发时本地使用https://api.openai.com/的代理https://api.openai-proxy.com/进行测试
+
+        2.8.0版本：增加密钥池，维护密钥，增加密钥数量到30个。
+        2.8.1版本：增加回复加载时提示，提升用户体验
+        2.8.2版本：增加调用通道
+            1、数据推送，按照chatId推送接口：POST http://localhost:80/openai/push
+            2、鸡仔商城智能助理特殊通道
+            3、idea阅读源码插件特殊通道
+            4、统一返回结果R类
+            5、全局异常处理类
+            6、分角色构建对话（ASSISTANT、USER、SYSTEM）
+        2.9.0版本：
+            1、增加调用接口失败重试，重试最大测试次数三次
+            2、增加查看当前有效的密钥和无效的密钥接口
+                在写该接口时，没有重写Apikey的equals()和hashCode()导致Set集合存在不同对象的相同属性内容的对象，不符合实际需求
+            3、在处理ApiKeyPool的时候方法增加synchronized关键字，保证在同一时间内只有一个线程可以对密钥有效性列表做操作
+        3.0.0版本：
+            1、极大优化，完善ApiKeyPool黑名单功能
+            2、优化界面
+            3、优化依赖注入，构造方法注入
+            4、优化了全局异常捕获并返回相对应的错误信息
+            5、优化前台，发送信息等待响应时需等待
+            6、修改bug，增加校验接口数据token值，避免超过4097token报400错误
+    -->
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <java.version>1.8</java.version>
+        <lombok.version>1.18.24</lombok.version>
+        <hutool.version>5.8.10</hutool.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <spring-boot.version>2.7.0</spring-boot.version>
+    </properties>
+
+    <dependencies>
+        <!--        feign网络请求发送工具-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.cloud</groupId>-->
+        <!--            <artifactId>spring-cloud-starter-openfeign</artifactId>-->
+        <!--            <version>3.1.1</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.alibaba</groupId>-->
+        <!--            <artifactId>fastjson</artifactId>-->
+        <!--            <version>2.0.25</version>-->
+        <!--        </dependency>-->
+        <!--流式响应-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+        <!--用于实现响应式编程和处理异步任务-->
+<!--        <dependency>-->
+<!--            <groupId>io.projectreactor</groupId>-->
+<!--            <artifactId>reactor-core</artifactId>-->
+<!--            <version>3.4.13</version>-->
+<!--        </dependency>-->
+        <!--接口文档依赖，knife4j增强文档-->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-spring-boot-starter</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+        <!--undertow-->
+        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-undertow</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.78</version>
+        </dependency>
+        <!--校验-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- thymeleaf -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <!--http框架-->
+        <dependency>
+            <groupId>com.dtflys.forest</groupId>
+            <artifactId>forest-spring-boot-starter</artifactId>
+            <version>1.5.30</version>
+        </dependency>
+        <!--hu-tool-->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>${hutool.version}</version>
+        </dependency>
+        <!--lombok-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.dtflys.forest</groupId>-->
+<!--            <artifactId>forest-spring-boot-starter</artifactId>-->
+<!--            <version>1.5.30</version>-->
+<!--        </dependency>-->
+    </dependencies>
+    <!--jitpack-->
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://www.jitpack.io</url>
+        </repository>
+    </repositories>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

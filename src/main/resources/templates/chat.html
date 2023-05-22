@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+
+    <title>Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/md.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/mdbase.css}">
+    <style>
+        body {
+            background-color: #202123;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0px;
+        }
+
+        .suggestion-item {
+            background-color: #6e6e80;
+            padding: 5px 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .suggestion-item:hover {
+            background-color: #6e6e80;
+        }
+
+        #suggestions::-webkit-scrollbar {
+            display: none;
+        }
+
+        .text-loader {
+            font-size: 14px;
+            font-weight: bold;
+            color: #777;
+            display: flex;
+        }
+
+        .text-loader span {
+            animation: showLetter 1s steps(1) infinite;
+            opacity: 0;
+        }
+
+        .text-loader span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .text-loader span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes showLetter {
+            0% {
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+
+        #suggestions {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .suggestion-item {
+            padding: 15px;
+            margin: 15px;
+        }
+
+        .suggestion-list {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #6e6e80;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: auto;
+            max-height: 200px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .container {
+            width: 100%;
+            height: 100%;
+            margin: 0px;
+            padding: 0px;
+        }
+        /*聊天底色*/
+        .card {
+            background: #404042;
+            transition: 0.5s;
+            border: 0;
+            border-radius: 0.55rem;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 1px 2px 0 #545562;
+        }
+
+        #msgBox::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+
+        #msgBox {
+            overflow-x: hidden;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        #sendButton {
+            cursor: pointer;
+            /*width: 80%;*/
+        }
+
+        .chat {
+            flex-grow: 1;
+            border-left: 1px solid #6e6e80;
+        }
+
+        .chat-app {
+            display: flex;
+            height: 100%;
+        }
+
+        .chat {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chat-app .people-list {
+            width: 260px;
+            z-index: 7;
+            border-bottom: 2px solid #202123;
+            float: left; /* Add this */
+        }
+
+        .chat-app .row {
+            flex-grow: 1;
+        }
+
+        .chat-app .chat {
+            flex-grow: 1;
+            border-left: 1px solid #202123;
+        }
+
+        .people-list .chat-list li {
+            padding: 10px 15px;
+            list-style: none;
+            border-radius: 3px;
+        }
+
+        .people-list .chat-list li:hover {
+            background: #202123;
+            cursor: pointer;
+        }
+
+        .people-list .chat-list li.active {
+            background: #68686e;
+        }
+
+        .people-list .chat-list li .name {
+            font-size: 15px;
+        }
+
+        .people-list .chat-list img {
+            width: 45px;
+            border-radius: 50%;
+        }
+
+        .people-list img {
+            float: left;
+            border-radius: 50%;
+        }
+
+        .people-list .about {
+            float: left;
+            padding-left: 8px;
+        }
+
+        .people-list .status {
+            color: #202123;
+            font-size: 13px;
+        }
+
+        .chat-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+        }
+
+        .chat .chat-header {
+            padding: 15px 20px;
+        }
+
+        .chat-history {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            bottom: 0px;
+            right: 0;
+            overflow: scroll;
+            height: calc(100% - 180px);
+        }
+
+        .chat-message {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+        }
+
+        .chat .chat-header img {
+            float: left;
+            border-radius: 40px;
+            width: 40px;
+        }
+
+        .chat .chat-header .chat-about {
+            float: left;
+            padding-left: 10px;
+        }
+
+        .chat .chat-history {
+            padding: 20px;
+        }
+
+        .chat .chat-history ul {
+            padding: 0;
+        }
+
+        .chat .chat-history ul li {
+            list-style: none;
+            margin-bottom: 30px;
+        }
+
+        .chat .chat-history ul li:last-child {
+            margin-bottom: 0px;
+        }
+
+        .chat .chat-history .message-data {
+            margin-bottom: 15px;
+        }
+
+        .chat .chat-history .message-data img {
+            border-radius: 40px;
+            width: 40px;
+        }
+
+        .chat .chat-history .message-data-time {
+            color: #ffffff;
+            padding-left: 6px;
+        }
+
+        .chat .chat-history .message {
+            background-color: #444654;
+            padding: 18px 20px;
+            font-size: 16px;
+            border-radius: 7px;
+            display: inline-block;
+            position: relative;
+        }
+
+        #loadingChar {
+            background-color: #202123;
+            padding: 18px 20px;
+            font-size: 16px;
+            border-radius: 7px;
+            display: inline-block;
+            position: relative;
+        }
+
+        .chat .chat-history .message:after {
+            bottom: 100%;
+            left: 0;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-bottom-color: #fff;
+            border-width: 10px;
+            margin-left: -10px;
+        }
+
+        /*机器人回复底色*/
+        .chat .chat-history .my-message {
+            background: #efefef;
+        }
+
+        .chat .chat-history .my-message:after {
+            bottom: 100%;
+            left: 0;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-bottom-color: #5dab0d;
+            border-width: 10px;
+            margin-left: -10px;
+        }
+
+        /*我的回复底色*/
+        .chat .chat-history .other-message {
+            background: #35586e;
+            text-align: left;
+        }
+
+        /*我的消息上标*/
+        .chat .chat-history .other-message:after {
+            border-bottom-color: #15e1e1;
+            bottom: 100%;
+            right: 0;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+            border-width: 10px;
+            margin-right: -500px;
+        }
+
+        .chat .chat-message {
+            padding: 20px;
+        }
+
+        .online,
+        .offline,
+        .me {
+            margin-right: 2px;
+            font-size: 8px;
+            vertical-align: middle;
+        }
+
+        .online {
+            color: #86c541;
+        }
+
+        .offline {
+            color: #e47297;
+        }
+
+        .me {
+            color: #1d8ecd;
+        }
+
+        .float-right {
+            float: right;
+        }
+
+        .clearfix:after {
+            visibility: hidden;
+            display: block;
+            font-size: 0;
+            content: " ";
+            clear: both;
+            height: 0;
+        }
+
+        /* 添加媒体查询以实现自适应 */
+        @media screen and (max-width: 992px) {
+            .chat-app .people-list {
+                display: none;
+            }
+        }
+
+        .chat {
+            margin: 0;
+        }
+
+        .chat-header {
+            border-radius: 0.55rem 0.55rem 0 0;
+        }
+
+        .chat-history {
+            height: 300px;
+            overflow-x: auto;
+        }
+
+        @media only screen and (min-width: 768px) and (max-width: 992px) {
+            .chat-app .chat-list {
+                height: 650px;
+                overflow-x: auto;
+            }
+
+            .chat-app .chat-history {
+                height: 600px;
+                overflow-x: auto;
+            }
+        }
+
+        @media only screen and (min-device-width: 768px) and (max-device-width: 1024px) and (orientation: landscape) and (-webkit-min-device-pixel-ratio: 1) {
+            .chat-app .chat-list {
+                height: 480px;
+                overflow-x: auto;
+            }
+
+            .chat-app .chat-history {
+                height: calc(100vh - 350px);
+                overflow-x: auto;
+            }
+        }
+
+        .dot-loader .dot {
+            position: absolute;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            animation: dot 1.2s ease-in-out infinite;
+        }
+
+        .dot-loader .dot:nth-child(1) {
+            animation-delay: 0s;
+            left: 8px;
+            top: 8px;
+        }
+
+        .dot-loader .dot:nth-child(2) {
+            animation-delay: 0.3s;
+            left: 24px;
+            top: 8px;
+        }
+
+        .dot-loader .dot:nth-child(3) {
+            animation-delay: 0.6s;
+            left: 40px;
+            top: 8px;
+        }
+
+        @keyframes dot {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(0);
+            }
+        }
+
+        .vditor-reset pre code {
+            color: #fff;
+            background-color: #1456c4;
+            width: 100%; /* or any specific width */
+            overflow-x: auto; /* Add horizontal scrollbar if necessary */
+            white-space: pre-wrap; /* Allows the text to wrap */
+            white-space: -moz-pre-wrap; /* Mozilla-specific, for older versions of Firefox */
+            white-space: -o-pre-wrap; /* For Opera 7 */
+            word-wrap: break-word; /* For IE 5.5+ and modern versions of Chrome, Safari and Firefox */
+        }
+
+        #outline ul {
+            margin-left: 16px;
+            list-style: none;
+        }
+
+        #outline > ul {
+            margin-left: 0;
+        }
+
+        #outline li > span {
+            cursor: pointer;
+            border-left: 1px solid transparent;
+            display: block;
+            padding-left: 8px;
+        }
+
+
+        #outline li > span:hover {
+            color: #4285f4;
+            background-color: #f6f8fa;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="chat-app" style="position: absolute;left: 0;width: 100%;height:100%;overflow:hidden">
+        <div id="plist" class="people-list">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fa fa-search"></i></span>
+                </div>
+                <input type="text" class="form-control" placeholder="搜索模型..."/>
+            </div>
+            <ul id="chats" class="list-unstyled chat-list mt-2 mb-0">
+                <li class="clearfix active">
+                    <img th:src="${assistant.avatar}" alt="avatar"/>
+                    <div class="about">
+                        <div class="name">[[${assistant.name}]]</div>
+                        <div class="status"><i class="fa fa-circle online"></i> online</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="row clearfix">
+            <div class="col-lg-12">
+                <div class="card chat-app">
+                    <div class="chat" style="position: relative;overflow: hidden;">
+                        <div class="chat-header clearfix"
+                             style="position: absolute;top:0;left: 0;width: 100%;height:100%;overflow:hidden">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <a href="javascript:void(0);" data-toggle="modal" data-target="#view_info">
+                                        <img th:src="${assistant.avatar}" alt="avatar"/>
+                                    </a>
+                                    <div class="chat-about">
+                                        <h6 class="m-b-0">[[${assistant.name}]]</h6>
+                                        <small>[[${assistant.intro}]]</small>
+                                    </div>
+                                </div>
+                                <!--							<div class="col-lg-6 hidden-sm text-right">-->
+                                <!--								<a href="javascript:void(0);" class="btn btn-outline-secondary"><i-->
+                                <!--										class="fa fa-camera"></i></a>-->
+                                <!--								<a href="javascript:void(0);" class="btn btn-outline-primary"><i-->
+                                <!--										class="fa fa-image"></i></a>-->
+                                <!--								<a href="javascript:void(0);" class="btn btn-outline-info"><i-->
+                                <!--										class="fa fa-cogs"></i></a>-->
+                                <!--								<a href="javascript:void(0);" class="btn btn-outline-warning"><i-->
+                                <!--										class="fa fa-question"></i></a>-->
+                                <!--							</div>-->
+                            </div>
+                        </div>
+
+                        <!--聊天框-->
+                        <div id="msgBox" class="chat-history"
+                             style="position: absolute; bottom: 90px; left: 0; height: 80%; overflow: scroll;">
+                            <ul id="messages" class="m-b-0">
+                                <!-- 聊天消息列表 -->
+                            </ul>
+                        </div>
+
+                        <div class="chat-message clearfix"
+                             style="position: absolute; bottom: 0; left: 0; width: 100%; height: 80px;padding-left: 18px;padding-right: 18px;background-color: #353740;">
+                            <!-- 在这里添加suggestions div -->
+                            <div id="suggestions" class="suggestion-list" style="position: absolute;width: auto;margin-left: 18px;margin-right: 18px;">
+                                <!-- 提示文本列表 -->
+                            </div>
+                            <div class="input-group mb-0" style="width: 100%;">
+                                <input id="inputMsg" type="text" class="form-control" placeholder="输入”/“补全小助手角色..." />
+                                <div class="input-group-append">
+            <span class="input-group-text" id="sendButton">
+                <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" th:src="@{/js/jquery.js}"></script>
+    <script type="text/javascript" th:src="@{/js/dayjs.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/axios.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script type="text/javascript" th:src="@{/js/vditor.js}" defer></script>
+    <script th:inline="javascript">
+        let chatId = "10086";
+        let userMsg = "<li class=\"clearfix\"><div class=\"message-data text-right\"><span class=\"message-data-time\">${date}</span></div><div class=\"message other-message float-right\">${message}</div></li>";
+        let assistantMsg = "<li class=\"clearfix \"><div class=\"message-data\"><span class=\"message-data-time\">${date}</span></div><div class=\"message my-message\">${message}</div></li>";
+        let loaderMsg = "<li id=\"msgLoader\" class=\"clearfix\"><div class=\"message-data\"><span class=\"message-data-time\">${date}</span></div><div id=\"loadingChar\" class=\"message my-message\">响应中...</div></li>";
+
+        //加载已有的聊天信息
+        function reloadChatMessages() {
+            axios({
+                url: '/openai/reloadChat',
+                method: 'post'
+            }).then(res => {
+                let messages = res.data;
+                messages.forEach(message => {
+                    if (message.role === 'user') {
+                        // 将 callLoader 设置为 false
+                        appendUserMsg(message.content, false);
+                    } else {
+                        appendAssistantMsg(message.content);
+                    }
+                });
+            });
+        }
+
+        // 聊天新增信息
+        function appendUserMsg(msg, callLoader = true) {
+            const nowDate = dayjs().format('YYYY-MM-DD HH:mm:ss');
+            let item = userMsg;
+            item = item.replace("${date}", nowDate);
+            item = item.replace("${message}", msg);
+            let appendMsg = $(item);
+            $('#messages').append(appendMsg);
+            reScroll();
+            if (callLoader) {
+                appendLoaderMsg(msg);
+                reScroll();
+            }
+        }
+
+
+        // 新增准备信息
+        function appendLoaderMsg(question) {
+            const nowDate = dayjs().format('YYYY-MM-DD HH:mm:ss');
+            let item = loaderMsg;
+            item = item.replace("${date}", nowDate);
+            let appendMsg = $(item);
+            $('#messages').append(appendMsg);
+            reScroll();
+
+            // 开始定时器
+            let loadingChars = [" ⣿ ", " ⣷ ", " ⣯ ", " ⣟ ", " ⡿ ", " ⢿ ", " ⣻ "];
+            //let loadingChars = [" ▁ ", " ▃ ", " ▅ ", " ▆ ", " ▇ "];
+            let loadingIndex = 0;
+            let loadingInterval = setInterval(() => {
+                let loadingChar = loadingChars[loadingIndex];
+                loadingIndex = (loadingIndex + 1) % loadingChars.length;
+                document.getElementById("loadingChar").innerText = `${loadingChar}Thinking...内容在服务器生成中...这样可以避免不可预测的中断...请稍后...`;
+            }, 100);
+
+            axios({
+                url: '/openai/chat',
+                method: 'post',
+                data: {
+                    chatId: chatId,
+                    content: question,
+                    withContext: 20
+                }
+            }).then(res => {
+                console.log(res)
+                $('#msgLoader').remove()
+                appendAssistantMsg(res.data)
+                reScroll();
+                // 停止定时器
+                clearInterval(loadingInterval);
+            }).catch(error => {
+                console.log(error);
+                $('#msgLoader').remove();
+                if (error.response && error.response.status === 500 || error.response.status === 401 || error.response.status === 429 || error.response.status === 400) {
+                    appendAssistantMsg(error.response.data);
+                    reScroll();
+                } else {
+                    // Handle other kinds of errors here
+                }
+                // 停止定时器
+                clearInterval(loadingInterval);
+            });
+        }
+
+        // 新增回复信息
+        function appendAssistantMsg(msg) {
+            const nowDate = dayjs().format('YYYY-MM-DD HH:mm:ss');
+            let item = assistantMsg;
+            msg = $.trim(msg);
+            item = item.replace("${date}", nowDate);
+            let markId = "md" + generateRandomString(8);
+            let markHtml = "<div id='${id}'></div>"
+            markHtml = markHtml.replace("${id}", markId)
+            item = item.replace("${message}", markHtml);
+            let appendMsg = $(item);
+            $('#messages').append(appendMsg);
+            //读出选中内容
+            Vditor.preview(document.getElementById(markId),
+                msg, {
+                    speech: {
+                        enable: true,
+                    },
+                    anchor: 1,
+                    after() {
+                        reScroll();
+                    },
+                })
+            reScroll();
+        }
+
+        // 随机字符串
+        function generateRandomString(length) {
+            let result = '';
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const charactersLength = characters.length;
+            for (let i = 0; i < length; i++) {
+                result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            }
+            return result;
+        }
+
+        function reScroll() {
+            // 获取容器元素
+            var msgBox = $('#msgBox');
+            msgBox.scrollTop(msgBox[0].scrollHeight);
+        }
+
+        $(document).ready(function () {
+            // 获取初始化内容
+            let initContent = [[${init.initContent}]]
+            chatId = [[${init.chatId}]]
+            appendAssistantMsg(initContent)
+            // 调用重新加载聊天记录的函数
+            reloadChatMessages();
+            let inputDom = $('#inputMsg')
+            let suggestions = $("#suggestions")
+            // 添加 "input" 事件监听器
+            inputDom.on('input', function () {
+                const inputVal = inputDom.val();
+                if (inputVal[0] === '/') {
+                    // 显示提示文本列表
+                    const suggestionList = [
+                        '我希望你充当基于文本的 excel。您只会回复我基于文本的 10 行 Excel 工作表，其中行号和单元格字母作为列（A 到 L）。第一列标题应为空以引用行号。我会告诉你在单元格中写入什么，你只会以文本形式回复 excel 表格的结果，而不是其他任何内容。不要写解释。我会写你的公式，你会执行公式，你只会回复 excel 表的结果作为文本。首先，回复我空表。',
+                        '我想让你做影评人。你需要看一部电影并以清晰的方式评论它，提供关于情节、表演、电影摄影、方向、音乐等的正面和负面反馈。我的第一个建议请求是“我需要帮助评论这部科幻电影”来自美国的黑客帝国。”',
+                        '我想让你扮演美食评论家。我会告诉你一家餐馆，你会提供对食物和服务的评论。您应该只回复您的评论，而不是其他任何内容。不要写解释。我的第一个请求是“我昨晚去了一家新的意大利餐厅。你能提供评论吗？”',
+                        '我想让你扮演虚拟医生。我会描述我的症状，你会提供诊断和治疗方案。只回复你的诊疗方案，其他不回复。不要写解释。我的第一个请求是“最近几天我一直感到头痛和头晕”。',
+                        '我想让你充当软件开发人员。我将提供一些关于 Web 应用程序要求的具体信息，您的工作是提出用于使用 Java 和 Vue 开发安全应用程序的架构和代码。我的第一个要求是\'我想要一个允许用户根据他们的角色注册和保存他们的车辆信息的系统，并且会有管理员，用户和公司角色。我希望系统使用 JWT 来保证安全\'',
+                        '我要你充当解梦师。我会给你描述我的梦，你会根据梦中出现的符号和主题提供解释。不要提供关于梦者的个人意见或假设。仅根据所提供的信息提供事实解释。我的第一个梦想是被一只巨型蜘蛛追赶。'
+                    ];
+                    let suggestionsHtml = '';
+                    for (let i = 0; i < suggestionList.length; i++) {
+                        suggestionsHtml += `<div class="suggestion-item">${suggestionList[i]}</div>`;
+                    }
+                    suggestions.html(suggestionsHtml);
+                    suggestions.show();
+                } else {
+                    // 隐藏提示文本列表
+                    suggestions.hide();
+                }
+            });
+            suggestions.on('click', '.suggestion-item', function () {
+                const selectedSuggestion = $(this).text();
+                inputDom.val(selectedSuggestion);
+                suggestions.hide();
+            });
+            // 新增：为 sendButton 添加点击事件监听器
+            $('#sendButton').on('click', function () {
+                // 获取输入框的值
+                var inputVal = inputDom.val();
+                // 清空输入框
+                inputDom.val('');
+                // 添加用户消息
+                appendUserMsg(inputVal);
+            });
+            inputDom.on('keydown', function (e) {
+                if (e.keyCode === 13) { // 回车键的 keyCode 是 13
+                    //console.log('按下了回车键');
+                    // 这里添加回车键按下后的处理逻辑
+                    var inputVal = inputDom.val();
+                    console.log(inputVal)
+                    inputDom.val('')
+                    appendUserMsg(inputVal);
+                }
+            });
+        });
+        $('#chats').on('click', 'li', function () {
+            $('li').removeClass('active');
+            $(this).addClass('active');
+        });
+    </script>
+</div>
+</body>
+</html>
