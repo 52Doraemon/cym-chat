@@ -33,7 +33,7 @@ public class WebChatController {
         // 聊天ID是一个随机生成的UUID，用于唯一标识此次聊天。初始内容是助手向用户发送的第一条消息。.
         WebChatParams initParams = new WebChatParams();
         initParams.setChatId(IdUtil.fastSimpleUUID());
-        initParams.setInitContent("芜湖小子再次来袭[dog]，请输入开启聊天之旅的密码，我将会与你无所不谈~");
+        initParams.setInitContent("芜湖小子再次来袭[dog]，快来开启我们的聊天之旅吧，我将会与你无所不谈~");
         modelAndView.setViewName("chat");
         modelAndView.addObject("assistant", params);
         modelAndView.addObject("init", initParams);

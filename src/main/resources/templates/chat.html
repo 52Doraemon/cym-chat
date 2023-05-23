@@ -593,12 +593,13 @@
                 url: '/openai/reloadChat',
                 method: 'post'
             }).then(res => {
-                let messages = res.data;
+                let messages = res.data.data;
                 messages.forEach(message => {
                     if (message.role === 'user') {
                         // 将 callLoader 设置为 false
                         appendUserMsg(message.content, false);
-                    } else {
+                    } else if(message.role === 'system'){}
+                    else{
                         appendAssistantMsg(message.content);
                     }
                 });
@@ -651,7 +652,7 @@
             }).then(res => {
                 console.log(res)
                 $('#msgLoader').remove()
-                appendAssistantMsg(res.data)
+                appendAssistantMsg(res.data.data)
                 reScroll();
                 // 停止定时器
                 clearInterval(loadingInterval);
