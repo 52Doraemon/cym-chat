@@ -1,20 +1,22 @@
 package com.cym.chat.controller;
 
-import com.cym.chat.utils.ChatCacheUtil;
-import com.cym.chat.params.chat.ChatResultStream;
-import com.cym.chat.service.ChatService;
+import cn.hutool.core.util.ObjectUtil;
+import com.cym.chat.common.R;
 import com.cym.chat.dto.ChatDTO;
 import com.cym.chat.dto.EditDTO;
 import com.cym.chat.dto.ImageDTO;
 import com.cym.chat.params.chat.ChatMessage;
 import com.cym.chat.params.chat.ChatParams;
 import com.cym.chat.params.chat.ChatResult;
+import com.cym.chat.params.chat.ChatResultStream;
 import com.cym.chat.params.edit.EditParams;
 import com.cym.chat.params.edit.EditResult;
 import com.cym.chat.params.edit.constant.EditModelEnum;
 import com.cym.chat.params.image.ImageParams;
 import com.cym.chat.params.image.ImageResult;
+import com.cym.chat.service.ChatService;
 import com.cym.chat.service.impl.ChatApiServiceImpl;
+import com.cym.chat.utils.ChatCacheUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import springfox.documentation.annotations.ApiIgnore;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author Yummy
@@ -93,7 +92,7 @@ public class ChatController {
         //插件特殊通道
         if ("ideaplugin-2jk43hggh4szpk7p8p453ko456za".equals(dto.getChatId())) {
             // 使用会话ID获取聊天记录
-            List<ChatMessage> messages = chatService.getContext("ideaplugin-2jk43hggh4szpk7p8p453ko456za", 0);
+            List<ChatMessage> messages = chatService.getContext(dto.getChatId(), 0);
             messages.add(chatService.buildUserMessage(dto.getContent()));
             messages.add(chatService.buildSystenMessage("你是一个源代码解析器，你的功能就是解读源码，你需要描述该接口的功能和作用。" +
                     "你的回答中你需要转换为html形式，用<html></html>包裹内容，里面的内容按照以下格式描述，你可以对其样式优化：" +
@@ -106,23 +105,24 @@ public class ChatController {
                     "【返回结果：具体描述。】"));
             ChatParams params = new ChatParams();
             params.setMessages(messages);
-            ChatResult result = chatService.doChat(params, "ideaplugin-2jk43hggh4szpk7p8p453ko456za");
+            ChatResult result = chatService.doChat(params, dto.getChatId());
             return chatService.simpleResult(result);
         }
 
         //鸡仔特殊通道
         if ("ypkj-2cfd5b86eeb84f8abdae4e867450eef6".equals(dto.getChatId())) {
             // 使用会话ID获取聊天记录
-            List<ChatMessage> messages = chatService.getContext("ypkj-2cfd5b86eeb84f8abdae4e867450eef6", 20);
+            List<ChatMessage> messages = ChatCacheUtil.getCacheListByMaxChar(dto.getChatId());
             messages.add(chatService.buildUserMessage(dto.getContent()));
-            if (messages.size() == 2) {
-                messages.add(chatService.buildUserMessage("您好，我是一品AI客服，请问有什么可以帮到您!"));
-                return "您好，我是一品AI客服，请问有什么可以帮到您!";
-            }
             ChatParams params = new ChatParams();
             params.setMessages(messages);
-            ChatResult result = chatService.doChat(params, "ypkj-2cfd5b86eeb84f8abdae4e867450eef6");
-            return chatService.simpleResult(result);
+            ChatResult result = chatService.doChat(params, dto.getChatId());
+            String data = chatService.simpleResult(result);
+            // 每次触发提问，判断是否有提示消息，封装一起返回（宕机重启时）
+            if (ObjectUtil.isNotEmpty(ChatCacheUtil.promptMap.get(dto.getChatId()))) {
+                return R.success(data);
+            }
+            return R.error("提示信息为空，请及时更新", data);
         }
 
         // 获取 HttpSession 对象

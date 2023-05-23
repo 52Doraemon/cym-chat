@@ -1,27 +1,27 @@
 package com.cym.chat.service.impl;
 
-import com.cym.chat.dto.ChatDTO;
-import com.cym.chat.params.edit.EditParams;
-import com.cym.chat.service.ChatAuthService;
-import com.cym.chat.service.ChatService;
-import com.cym.chat.utils.ApiKeyPoolUtil;
-import com.cym.chat.utils.ChatApiUtil;
-import com.dtflys.forest.exceptions.ForestRuntimeException;
-import com.dtflys.forest.http.ForestResponse;
 import com.cym.chat.api.chat.ChatApi;
 import com.cym.chat.api.edit.EditApi;
 import com.cym.chat.api.image.ImageApi;
-import com.cym.chat.utils.ChatCacheUtil;
-import com.cym.chat.params.constant.ChatRoleConst;
+import com.cym.chat.dto.ChatDTO;
 import com.cym.chat.params.chat.ChatMessage;
 import com.cym.chat.params.chat.ChatParams;
 import com.cym.chat.params.chat.ChatResult;
 import com.cym.chat.params.chat.model.ChoiceModel;
+import com.cym.chat.params.constant.ChatRoleConst;
+import com.cym.chat.params.edit.EditParams;
 import com.cym.chat.params.edit.EditResult;
 import com.cym.chat.params.edit.model.EditChoiceModel;
 import com.cym.chat.params.image.ImageParams;
 import com.cym.chat.params.image.ImageResult;
 import com.cym.chat.params.image.model.ImageChoiceModel;
+import com.cym.chat.service.ChatAuthService;
+import com.cym.chat.service.ChatService;
+import com.cym.chat.utils.ApiKeyPoolUtil;
+import com.cym.chat.utils.ChatApiUtil;
+import com.cym.chat.utils.ChatCacheUtil;
+import com.dtflys.forest.exceptions.ForestRuntimeException;
+import com.dtflys.forest.http.ForestResponse;
 import kotlin.jvm.Throws;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,8 +73,8 @@ public class ChatServiceImpl implements ChatService {
         this.authService = authService;
         this.apiKeyPoolUtil = apiKeyPoolUtil;
     }
-
-
+    
+    
     /**
      * 从缓存中提取消息
      *
@@ -85,14 +85,19 @@ public class ChatServiceImpl implements ChatService {
         List<ChatMessage> messages = ChatCacheUtil.get(sessionId);
         return messages;
     }
-
+    
+    /**
+     * 推送数据接口，数据更新到提示集中
+     *
+     * @param dto
+     * @return
+     * @see ChatCacheUtil.promptMap
+     */
     public String handlePush(ChatDTO dto) {
         if (jiZaiToken.equals(dto.getChatId())) {
-            // 写入缓存
-            List<ChatMessage> messages = ChatCacheUtil.get(jiZaiToken);
-            messages.add(this.buildSystenMessage(roleSystemJiZai + dto.getContent()));
-            ChatCacheUtil.put(jiZaiToken, messages);
-            System.out.println(ChatCacheUtil.chats);
+            // 写入缓存提示集
+            ChatCacheUtil.promptMap.put(jiZaiToken, buildSystenMessage(dto.getContent()));
+            System.out.println(ChatCacheUtil.promptMap.get(dto.getChatId()));
             return "注入数据成功";
         }
         return "注入失败，请重新注入·";

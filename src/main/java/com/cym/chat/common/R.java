@@ -25,20 +25,30 @@ public class R<T> implements Serializable {
     public static <T> R<T> success(T object) {
         R<T> r = new R<T>();
         r.data = object;
-        r.code = 1;
+        r.msg = "";
+        r.code = ResStatusEnum.SUCCESS.getCode();
         return r;
     }
 
     public static <T> R<T> error(String msg) {
         R r = new R();
         r.msg = msg;
-        r.code = 0;
+        r.data = "";
+        r.code = ResStatusEnum.ERROR.getCode();
         return r;
     }
-
+    
     public R<T> add(String key, Object value) {
         this.map.put(key, value);
         return this;
     }
-
+    
+    public static <T> R<T> error(String msg, T object) {
+        R r = new R();
+        r.msg = msg;
+        r.code = ResStatusEnum.ERROR.getCode();
+        r.data = object;
+        return r;
+    }
+    
 }
