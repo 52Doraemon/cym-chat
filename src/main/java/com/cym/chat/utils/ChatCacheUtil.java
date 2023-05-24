@@ -40,7 +40,7 @@ public class ChatCacheUtil {
      * @param key
      * @param value
      */
-    public static void put(String key, List<ChatMessage> value) {
+    public synchronized static void put(String key, List<ChatMessage> value) {
         int listSize = value.size();
         // 创建一个新列表，默认情况下等于输入列表
         List<ChatMessage> newMessages = value;
@@ -60,7 +60,7 @@ public class ChatCacheUtil {
      * @param key
      * @return
      */
-    public static List<ChatMessage> get(String key) {
+    public synchronized static List<ChatMessage> get(String key) {
         List<ChatMessage> messages = chats.get(key);
         if (Validator.isEmpty(messages)) {
             return new ArrayList<>();
@@ -75,7 +75,7 @@ public class ChatCacheUtil {
      * @param key
      * @param maxChar
      */
-    public static List<ChatMessage> getCacheListByMaxChar(String key, Integer maxChar) {
+    public synchronized static List<ChatMessage> getCacheListByMaxChar(String key, Integer maxChar) {
         List<ChatMessage> chatMessages = chats.get(key);
         if (ObjectUtil.isNull(chatMessages)) {
             // 新建对象需要再写入缓存覆盖原对象（否则对象地址不同，不能持久化）
@@ -107,7 +107,7 @@ public class ChatCacheUtil {
      * @param key
      * @return
      */
-    public static List<ChatMessage> getCacheListByMaxChar(String key) {
+    public synchronized static List<ChatMessage> getCacheListByMaxChar(String key) {
         ChatMessage promptChatMessage = promptMap.get(key);
         if (ObjectUtil.isEmpty(promptChatMessage)) {
             return getCacheListByMaxChar(key, MAX_CHAR);

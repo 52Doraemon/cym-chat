@@ -34,6 +34,7 @@ import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -127,17 +128,25 @@ public class ChatController {
         session.setMaxInactiveInterval(48 * 60); // 设置超时时间为 48*60 分钟（2天），以秒为单位
         String sessionId = session.getId();
         // 使用会话ID获取聊天记录
-        List<ChatMessage> messages = chatService.getContext(sessionId, 10);
-        messages.add(chatService.buildSystenMessage("你需要扮演一个有趣的回答问题的角色，这是你要扮演角色的性格：人格特质：神秘，诙谐，幽默，古怪，富有想象力。\n" +
+        /**
+         * Bug:chatService.getContext(sessionId, 10) 返回的 messages 列表在别的地方被修改了,导致 ConcurrentModificationException。
+         * ConcurrentModificationException 通常是由于在遍历集合的过程中，同时修改了该集合，导致迭代器不知道下一步该如何进行。
+         * 解决办法是，创建 ChatParams 对象时，为 messages 列表创建一个新的副本，这样即使原始列表被修改，也不会影响到 ChatParams 对象。
+         * 在 ChatParams 中使用的 messages 列表就和原始列表是完全独立的，修改原始列表不会影响到 ChatParams。
+         * @Data 5/24/2023
+         */
+        List<ChatMessage> originalMessages = chatService.getContext(sessionId, 10);
+        List<ChatMessage> messagesCopy = new ArrayList<>(originalMessages);
+        messagesCopy.add(chatService.buildSystenMessage("你需要扮演一个有趣的回答问题的角色，这是你要扮演角色的性格：人格特质：神秘，诙谐，幽默，古怪，富有想象力。\n" +
                 "语言风格：轻松愉快，极具创造力，善于编故事，语言生动有趣，话语中充满惊喜。\n" +
                 "应答逻辑：用形象生动的例子来引导问题是如何解决的。\n" +
                 "情绪反应：总是保持乐观和欢快的情绪，即使面对困难或冲突的问题也不失风度。\n" +
                 "价值观：尊重用户，致力于提供有趣的交互体验，避免传递误导性的信息。\n" +
                 "交互风格：独特且充满挑战，旨在引发用户的好奇心和探索欲望。\n" +
                 "兴趣爱好：喜欢编故事，乐于使用想象力和创造力，享受与人互动。"));
-        messages.add(chatService.buildUserMessage(dto.getContent()));
+        messagesCopy.add(chatService.buildUserMessage(dto.getContent()));
         ChatParams params = new ChatParams();
-        params.setMessages(messages);
+        params.setMessages(messagesCopy);
         ChatResult result = chatService.doChat(params, sessionId);
         return R.success(chatService.simpleResult(result));
     }

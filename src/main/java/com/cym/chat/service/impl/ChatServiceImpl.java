@@ -192,6 +192,11 @@ public class ChatServiceImpl implements ChatService {
         ChatMessage message = choice.getMessage();
 
         // 写入缓存
+        /**
+         * ChatCacheUtil.put(chatId, messages); 方法可能也存在并发问题。如果你在多个线程中修改同一个 chatId 的 messages 列表，那么也可能发生 ConcurrentModificationException。
+         * 解决办法，对ChatCacheUtil进行同步
+         * @Data 5/24/2023
+         */
         List<ChatMessage> messages = ChatCacheUtil.get(chatId);
         messages.add(message);
         ChatCacheUtil.put(chatId, messages);
