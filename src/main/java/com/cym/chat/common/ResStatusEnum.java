@@ -9,7 +9,12 @@ package com.cym.chat.common;
 public enum ResStatusEnum {
     
     SUCCESS(1),
-    ERROR(0);
+    ERROR(0),
+    
+    /**
+     * 代理网站成功响应码
+     */
+    PROXY_SUCCESS(200);
     
     private final Integer code;
     
